@@ -26,3 +26,7 @@ Vue 3 + TypeScript + Vite SPA with task management, filtering, and email subscri
 3. **Run tests:** `cd backend.Tests && dotnet test`
 
 Backend runs on `https://localhost:7030`, frontend on `http://localhost:5173`.
+
+## Screenshots
+
+![ListView.png](ListView.png) ![DetailView.png](DetailView.png)
