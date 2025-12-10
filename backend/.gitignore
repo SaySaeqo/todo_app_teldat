@@ -1,0 +1,26 @@
+# Build outputs
+bin/
+obj/
+
+# SQLite database
+*.db
+*.db-shm
+*.db-wal
+
+# User secrets / local settings
+appsettings.*.local.json
+
+# VS Code / IDE
+.vscode/
+*.user
+*.swp
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# Dotnet tools
+/.store/
+/.dotnet/tools
