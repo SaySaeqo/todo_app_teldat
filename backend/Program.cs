@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using todo_app_teldat.Data;
+using todo_app_teldat.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add email service and daily reminder background service
+builder.Services.AddSingleton<IEmailService, MockEmailService>();
+builder.Services.AddHostedService<DailyReminderService>();
 
 var app = builder.Build();
 
