@@ -29,6 +29,8 @@ const handleLogout = () => {
   auth.email = ''
   auth.loginInput = ''
   localStorage.removeItem('userEmail')
+  // refresh the page to clear any user-specific data
+  window.location.reload()
 }
 
 onMounted(loadAuth)

@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onBeforeMount, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { SubscriptionEmail, TodoItem } from '../types'
+import axios from '@/axios'
+import type { SubscriptionEmail, TodoItem } from '@/types'
+
+const props = defineProps<{
+  item?: TodoItem | null
+}>()
 
 const route = useRoute()
 const router = useRouter()
@@ -29,33 +34,35 @@ const original = reactive({
   subscriptionEmails: [] as SubscriptionEmail[],
 })
 
+const loadItem = (data: TodoItem) => {
+  state.item = data
+  form.title = data.title
+  form.isComplete = data.isComplete
+  form.dueDate = data.dueDate ? data.dueDate.substring(0, 10) : ''
+  form.subscriptionEmails = [...(data.subscriptionEmails ?? [])]
+  
+  original.title = form.title
+  original.isComplete = form.isComplete
+  original.dueDate = form.dueDate
+  original.subscriptionEmails = JSON.parse(JSON.stringify(form.subscriptionEmails))
+  
+  state.hasChanges = false
+}
+
 const fetchItem = async () => {
   state.loading = true
   state.error = null
   try {
-    const res = await fetch(`/api/todoitems/${id}`)
-    if (!res.ok) throw new Error('Failed to load item')
-    const data = (await res.json()) as TodoItem
-    state.item = data
-    form.title = data.title
-    form.isComplete = data.isComplete
-    form.dueDate = data.dueDate ? data.dueDate.substring(0, 10) : ''
-    form.subscriptionEmails = [...(data.subscriptionEmails ?? [])]
-    
-    original.title = form.title
-    original.isComplete = form.isComplete
-    original.dueDate = form.dueDate
-    original.subscriptionEmails = JSON.parse(JSON.stringify(form.subscriptionEmails))
-    
-    state.hasChanges = false
+    const { data } = await axios.get<TodoItem>(`/todoitems/${id}`)
+    loadItem(data)
   } catch (err: any) {
-    state.error = err?.message ?? 'Unexpected error'
+    state.error = err?.response?.data?.message || err?.message || 'Unexpected error'
   } finally {
     state.loading = false
   }
 }
 
-onMounted(fetchItem)
+onBeforeMount(fetchItem)
 
 const hasUnsavedChanges = computed(() => {
   return (
@@ -96,15 +103,10 @@ const save = async () => {
       subscriptionEmails: form.subscriptionEmails.filter(e => e.email.trim()),
     }
 
-    const res = await fetch(`/api/todoitems/${state.item.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    if (!res.ok) throw new Error('Failed to save changes')
+    await axios.put(`/todoitems/${state.item.id}`, payload)
     await fetchItem()
   } catch (err: any) {
-    state.error = err?.message ?? 'Save failed'
+    state.error = err?.response?.data?.message || err?.message || 'Save failed'
   } finally {
     state.saving = false
   }
@@ -116,11 +118,10 @@ const confirmDelete = async () => {
   if (!ok) return
 
   try {
-    const res = await fetch(`/api/todoitems/${state.item.id}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error('Delete failed')
+    await axios.delete(`/todoitems/${state.item.id}`)
     router.push({ name: 'list' })
   } catch (err: any) {
-    state.error = err?.message ?? 'Delete failed'
+    state.error = err?.response?.data?.message || err?.message || 'Delete failed'
   }
 }
 

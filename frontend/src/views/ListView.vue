@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { PagedResult, TodoItem } from '../types'
+import axios from '@/axios'
+import type { PagedResult, TodoItem } from '@/types'
 
 const router = useRouter()
 
@@ -35,23 +36,21 @@ const fetchItems = async () => {
   state.loading = true
   state.error = null
   try {
-    const params = new URLSearchParams()
-    params.set('page', state.page.toString())
-    params.set('pageSize', state.pageSize.toString())
-    if (filters.search.trim()) params.set('search', filters.search.trim())
-    if (filters.dueBefore) params.set('dueBefore', new Date(filters.dueBefore).toISOString())
-    if (filters.status === 'open') params.set('isComplete', 'false')
-    if (filters.status === 'done') params.set('isComplete', 'true')
-    params.set('sortBy', filters.sortBy)
+    const params: any = {
+      page: state.page,
+      pageSize: state.pageSize,
+      sortBy: filters.sortBy,
+    }
+    if (filters.search.trim()) params.search = filters.search.trim()
+    if (filters.dueBefore) params.dueBefore = new Date(filters.dueBefore).toISOString()
+    if (filters.status === 'open') params.isComplete = false
+    if (filters.status === 'done') params.isComplete = true
 
-    const res = await fetch(`/api/todoitems?${params.toString()}`)
-    if (!res.ok) throw new Error('Failed to load todo items')
-
-    const data = (await res.json()) as PagedResult<TodoItem>
+    const { data } = await axios.get<PagedResult<TodoItem>>('/todoitems', { params })
     state.items = data.items
     state.totalCount = data.totalCount
   } catch (err: any) {
-    state.error = err?.message ?? 'Unexpected error'
+    state.error = err?.response?.data?.message || err?.message || 'Unexpected error'
   } finally {
     state.loading = false
   }
@@ -81,7 +80,7 @@ const toggleSubscription = async (item: TodoItem, event: Event) => {
 
   try {
     let newEmails = [...(item.subscriptionEmails ?? [])]
-    
+
     if (currentlySubscribed) {
       newEmails = newEmails.filter(s => s.email !== userEmail.value)
     } else {
@@ -97,16 +96,10 @@ const toggleSubscription = async (item: TodoItem, event: Event) => {
       subscriptionEmails: newEmails,
     }
 
-    const res = await fetch(`/api/todoitems/${item.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-
-    if (!res.ok) throw new Error('Failed to update subscription')
+    await axios.put(`/todoitems/${item.id}`, payload)
 
     item.subscriptionEmails = newEmails
-    
+
     const message = currentlySubscribed ? 'Unsubscribed successfully' : 'Subscribed successfully'
     showNotification(message)
   } catch (err: any) {
@@ -126,21 +119,15 @@ const showNotification = (message: string) => {
 
 const createNew = async () => {
   try {
-    const res = await fetch('/api/todoitems', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: 'New task',
-        isComplete: false,
-        dueDate: null,
-        subscriptionEmails: [],
-      }),
+    const { data: created } = await axios.post<TodoItem>('/todoitems', {
+      title: 'New task',
+      isComplete: false,
+      dueDate: null,
+      subscriptionEmails: [],
     })
-    if (!res.ok) throw new Error('Failed to create item')
-    const created = (await res.json()) as TodoItem
     router.push({ name: 'detail', params: { id: created.id } })
   } catch (err: any) {
-    state.error = err?.message ?? 'Failed to create item'
+    state.error = err?.response?.data?.message || err?.message || 'Failed to create item'
   }
 }
 
@@ -202,13 +189,9 @@ const prevPage = () => {
           <div class="badge" :class="{ complete: item.isComplete }">
             {{ item.isComplete ? 'Done' : 'Open' }}
           </div>
-          <button
-            class="bell-button"
-            :class="{ active: isSubscribed(item), disabled: !userEmail }"
-            :disabled="!userEmail || state.togglingSubscription[item.id]"
-            @click="toggleSubscription(item, $event)"
-            :title="userEmail ? (isSubscribed(item) ? 'Unsubscribe' : 'Subscribe') : 'Login to subscribe'"
-          >
+          <button class="bell-button" :class="{ active: isSubscribed(item), disabled: !userEmail }"
+            :disabled="!userEmail || state.togglingSubscription[item.id]" @click="toggleSubscription(item, $event)"
+            :title="userEmail ? (isSubscribed(item) ? 'Unsubscribe' : 'Subscribe') : 'Login to subscribe'">
             {{ isSubscribed(item) ? '🔔' : '🔕' }}
           </button>
         </div>
