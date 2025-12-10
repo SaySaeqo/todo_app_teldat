@@ -61,8 +61,8 @@ public class TodoItemsController : ControllerBase
         query = sortBy?.ToLower() switch
         {
             "createdasc" => query.OrderBy(t => t.CreatedAt),
-            "duedesc" => query.OrderByDescending(t => t.DueDate).ThenByDescending(t => t.CreatedAt),
-            "dueasc" => query.OrderBy(t => t.DueDate).ThenByDescending(t => t.CreatedAt),
+            "duedesc" => query.OrderByDescending(t => t.DueDate == null ? DateTime.MaxValue : t.DueDate).ThenByDescending(t => t.CreatedAt),
+            "dueasc" => query.OrderBy(t => t.DueDate == null ? DateTime.MaxValue : t.DueDate).ThenByDescending(t => t.CreatedAt),
             "titleasc" => query.OrderBy(t => t.Title),
             "titledesc" => query.OrderByDescending(t => t.Title),
             _ => query.OrderByDescending(t => t.CreatedAt)

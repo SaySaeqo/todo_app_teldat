@@ -20,7 +20,7 @@ const filters = reactive({
   search: '',
   dueBefore: '',
   status: 'all' as 'all' | 'open' | 'done',
-  sortBy: 'createdDesc' as 'createdDesc' | 'createdAsc' | 'dueDesc' | 'dueAsc' | 'titleAsc' | 'titleDesc',
+  sortBy: 'dueAsc' as 'createdDesc' | 'createdAsc' | 'dueDesc' | 'dueAsc' | 'titleAsc' | 'titleDesc',
 })
 
 const userEmail = computed(() => localStorage.getItem('userEmail') || '')

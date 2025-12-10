@@ -111,6 +111,7 @@ public partial class TodoItemsControllerTests : IDisposable
         
         await _client.PostAsJsonAsync("/api/todoitems", new TodoItem { Title = "Task 1", DueDate = tomorrow });
         await _client.PostAsJsonAsync("/api/todoitems", new TodoItem { Title = "Task 2", DueDate = nextWeek });
+        await _client.PostAsJsonAsync("/api/todoitems", new TodoItem { Title = "Task 3", DueDate = null });
 
         // Act
         var response = await _client.GetAsync($"/api/todoitems?dueBefore={nextWeek.AddDays(-1):O}");
@@ -128,10 +129,12 @@ public partial class TodoItemsControllerTests : IDisposable
     [InlineData("createdAsc")]
     [InlineData("titleAsc")]
     [InlineData("titleDesc")]
+    [InlineData("dueAsc")]
+    [InlineData("dueDesc")]
     public async Task GetAll_ReturnsSortedItems_ByDifferentCriteria(string sortBy)
     {
         // Arrange
-        await _client.PostAsJsonAsync("/api/todoitems", new TodoItem { Title = "Zebra task" });
+        await _client.PostAsJsonAsync("/api/todoitems", new TodoItem { Title = "Zebra task", DueDate = DateTime.UtcNow.AddDays(2) });
         await _client.PostAsJsonAsync("/api/todoitems", new TodoItem { Title = "Alpha task" });
 
         // Act
@@ -152,6 +155,26 @@ public partial class TodoItemsControllerTests : IDisposable
         {
             Assert.Equal("Zebra task", result.Items[0].Title);
             Assert.Equal("Alpha task", result.Items[1].Title);
+        }
+        else if (sortBy == "createdAsc")
+        {
+            Assert.Equal("Zebra task", result.Items[0].Title);
+            Assert.Equal("Alpha task", result.Items[1].Title);
+        }
+        else if (sortBy == "createdDesc")
+        {
+            Assert.Equal("Alpha task", result.Items[0].Title);
+            Assert.Equal("Zebra task", result.Items[1].Title);
+        }
+        else if (sortBy == "dueAsc")
+        {
+            Assert.Equal("Alpha task", result.Items[1].Title);
+            Assert.Equal("Zebra task", result.Items[0].Title); // No due date comes last
+        }
+        else if (sortBy == "dueDesc")
+        {
+            Assert.Equal("Zebra task", result.Items[1].Title);
+            Assert.Equal("Alpha task", result.Items[0].Title); // No due date comes first
         }
     }
 
