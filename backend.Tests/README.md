@@ -38,6 +38,26 @@ Comprehensive integration tests for the Todo API endpoints using xUnit and WebAp
 - Returns 404 when not found
 - Cascades subscription emails
 
+### DailyReminderService Tests (8 tests)
+
+**Email Sending Logic**
+- Sends emails for tasks due within 3 days
+- Sends for tasks due today
+- Handles multiple tasks and subscribers correctly
+
+**Filtering Rules**
+- Does not send for completed tasks
+- Does not send for tasks without due dates
+- Does not send for tasks due beyond 3 days
+- Does not send for past due tasks
+- Does not send for tasks without subscribers
+
+**Service Details**
+- Runs at midnight UTC daily
+- Checks incomplete tasks with due dates ≤ 3 days from today
+- Uses mock email service for testing (logs instead of sending)
+- Uses reflection to invoke private `SendRemindersAsync` method
+
 ## Running Tests
 
 ```bash
