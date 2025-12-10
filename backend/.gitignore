@@ -3,7 +3,7 @@ bin/
 obj/
 
 # SQLite database
-*.db
+# *.db
 *.db-shm
 *.db-wal
 
